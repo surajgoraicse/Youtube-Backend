@@ -33,6 +33,7 @@ const app = express()
  })()
  */
 
+
 // Method 2: of connecting db(professional)
 connectDB()
     .then((result) => {
@@ -41,7 +42,7 @@ connectDB()
         })
         app.listen(process.env.PORT || 8000, () => {
             console.log("app is listening at port ", process.env.PORT || 8000);
-        })
+        }) 
     })
     .catch((err) => {
         console.log("DB connection error : ", err);
