@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
+import fs from 'fs'
 
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -37,7 +38,7 @@ const registerUser = asyncHandler(async (req, res) => {
     // checking if the user already exists in db
     // const existedUser = User.findOne({ email }) // returns true if email exists
 
-    const existedUser = User.findOne({  // returns true if email or username exists
+    const existedUser = await User.findOne({  // returns true if email or username exists
         $or: [{ username }, { email }]
     })
 
@@ -46,10 +47,12 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
 
+
     // check for images
     // req.files comes from multer (not a part of express)
-    const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path
+    const avatarLocalPath = req.files?.avatar?.[0]?.path;
+    const coverImageLocalPath = req.files?.coverImage?.[0]?.path
+
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar is required")
