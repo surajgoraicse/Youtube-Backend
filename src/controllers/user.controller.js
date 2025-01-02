@@ -120,11 +120,16 @@ const loginUser = asyncHandler(async (req, res) => {
     // send cookie
     // send response
 
+
+    // getting data from the body
     const { username, email, password } = req.body
+
+    // validating data
     if (!username || !email) {   // TODO: && operator
         throw new ApiError(400, "username or email is required")
     }
 
+    // check if user exists
     const user = await User.findOne({
         $or: [{ username }, { email }]
     })
@@ -133,6 +138,8 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(404, "user does not exist")  // TODO: use an else block
     }
 
+
+    // password check
     const isPasswordValid = await user.isPasswordCorrect(password)
 
     if (!isPasswordCorrect) {
@@ -143,8 +150,12 @@ const loginUser = asyncHandler(async (req, res) => {
     // generating access and refresh tokens
     const { refreshToken, accessToken } = await generateAccessAndRefreshToken(user._id)
 
+
+    // getting the user data obj
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
     // select method is used here to remove the password and refreshToken properties from the user object.
+
+
 
     const options = {  // making cookies secure
         httpOnly: true,// can be changed only by browsers
@@ -159,16 +170,40 @@ const loginUser = asyncHandler(async (req, res) => {
             user: loggedInUser,
             accessToken,
             refreshToken
-        }, "User logged In successfully" ))
+        }, "User logged In successfully"))
 
 
 })
 
-const loggedOutUser = asyncHandle(aync(req, res) => {
+const loggedOutUser = asyncHandle(async (req, res) => {
+    // added a middleware to the express app that adds user details to the req object
 
-    
-    User
+    //  remove the refresh token from db
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: {
+                refreshToken: undefined
+            }
+        },
+        {
+            new: true  // will return the updated user
+        }
+    )
+
+    const options = {  // making cookies secure
+        httpOnly: true,// can be changed only by browsers
+        secure: true
+    }
+
+
+    return res
+        .status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new ApiResponse(200, {}, "User logged out"))
+
 })
 
 
-export { registerUser, loginUser , loggedOutUser }
+export { registerUser, loginUser, loggedOutUser }
