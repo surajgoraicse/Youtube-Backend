@@ -5,6 +5,21 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import fs from 'fs'
 
+const generateAccessAndRefreshToken = async (userId) => {
+    try {
+        const user = await User.findById(userId)
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+
+        user.refreshToken = refreshToken
+        await user.save({ validateBeforeSave: false })
+        // whenever a value is updated in the user model, the properties with required filed gets activated. So to pass this, mongoose provide a property to skip validation
+
+        return { accessToken, refreshToken }
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong while generating refresh and access token")
+    }
+}
 
 const registerUser = asyncHandler(async (req, res) => {
     // get user details from frontend
@@ -52,7 +67,7 @@ const registerUser = asyncHandler(async (req, res) => {
     // req.files comes from multer (not a part of express)
     const avatarLocalPath = req.files?.avatar?.[0]?.path;
     const coverImageLocalPath = req.files?.coverImage?.[0]?.path
-
+    // console.log(avatarLocalPath);
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar is required")
@@ -92,7 +107,68 @@ const registerUser = asyncHandler(async (req, res) => {
     )
 
 
+
+
+})
+
+const loginUser = asyncHandler(async (req, res) => {
+    // get data from body
+    // validata username or email
+    // find the user
+    // password check
+    // access and refresh token
+    // send cookie
+    // send response
+
+    const { username, email, password } = req.body
+    if (!username || !email) {   // TODO: && operator
+        throw new ApiError(400, "username or email is required")
+    }
+
+    const user = await User.findOne({
+        $or: [{ username }, { email }]
+    })
+
+    if (!user) {
+        throw new ApiError(404, "user does not exist")  // TODO: use an else block
+    }
+
+    const isPasswordValid = await user.isPasswordCorrect(password)
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(401, " Invalid user credentials")  // TODO: use an else block
+    }
+
+
+    // generating access and refresh tokens
+    const { refreshToken, accessToken } = await generateAccessAndRefreshToken(user._id)
+
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+    // select method is used here to remove the password and refreshToken properties from the user object.
+
+    const options = {  // making cookies secure
+        httpOnly: true,// can be changed only by browsers
+        secure: true
+    }
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(new ApiResponse(200, {
+            user: loggedInUser,
+            accessToken,
+            refreshToken
+        }, "User logged In successfully" ))
+
+
+})
+
+const loggedOutUser = asyncHandle(aync(req, res) => {
+
+    
+    User
 })
 
 
-export { registerUser }
+export { registerUser, loginUser , loggedOutUser }
