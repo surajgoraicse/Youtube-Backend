@@ -1,11 +1,12 @@
 import { ApiError } from "../utils/ApiError.js"
 import jwt from "jsonwebtoken"
 import { User } from "../models/user.model.js"
-import { asyncHandler } from "../utils/AsyncHandler"
+import { asyncHandler } from "../utils/AsyncHandler.js"
 
 export const verifyJWT = asyncHandler(async (req, _, next) => {
     try {
-        const token = req.cookie?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
+        const token =  req.cookie?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
+        // console.log(token);
         // req object has access to cookies which comes from the browser.
         // in case where the request is not comming from the browser then we will access token from the header.
 
