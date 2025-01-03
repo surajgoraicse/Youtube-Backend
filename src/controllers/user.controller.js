@@ -184,8 +184,8 @@ const loggedOutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: {
-                refreshToken: undefined
+            $unset: {
+                refreshToken: 1 // this removes the field from document
             }
         },
         {
@@ -199,7 +199,7 @@ const loggedOutUser = asyncHandler(async (req, res) => {
     }
 
 
-
+    console.log("logout successfully");
     return res
         .status(200)
         .clearCookie("accessToken", options)
@@ -252,7 +252,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     update the password
     send response
     */
-
+    console.log("command in the change password");
     const { currentPassword, newPassword } = req.body
     // TODO: perform validation
 
@@ -273,6 +273,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
 const getCurrentUser = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id)
+    console.log(user);
     return res.status(200).json(200, user, "current user fetched successfully")
 })
 
