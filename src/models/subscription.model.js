@@ -12,3 +12,6 @@ const subscriptionSchema = Schema({
 }, { timestamps: true })
 
 export const Subscription = mongoose.model("Subscription", subscriptionSchema)
+
+// subscribers will get channels
+// channel will get subscribers
