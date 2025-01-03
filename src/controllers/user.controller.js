@@ -301,8 +301,74 @@ const updateAccountDetais = asyncHandler(async (req, res) => {
 })
 
 const updateAvatar = asyncHandler(async (req, res) => {
-    
+    /*
+    get data from the body
+    validate data
+    validate the user
+    update the avatar
+    remove the avatar from cloudinary TODO:
+    */
+    const avatarLocalPath = req.file?.path
+    if (!avatarLocalPath) {
+        throw new ApiError(400, "avatar file is missing")
+    }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+    if (!avatar.url) {
+        throw new ApiError(500, "Error uploading to cloudinary")
+    }
+
+    const user = await findByIdAndUpdate(req.user?._id, {
+        $set: {
+            avatar: avatar.url
+        }
+    }, { new: true }).select("-password -refreshToken")
+
+    return res.status(200).json(200, user, "avatar changed successfully")
 })
 
 
-export { registerUser, loginUser, loggedOutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetais }
+const updateCoverImage = asyncHandler(async (req, res) => {
+    /*
+    get data from the body
+    validate data
+    validate the user
+    update the converImage
+    remove the converImage from cloudinary TODO:
+    */
+    const coverImageLocalPath = req.file?.path
+    if (!coverImageLocalPath) {
+        throw new ApiError(400, "converImage file is missing")
+    }
+
+    const converImage = await uploadOnCloudinary(coverImageLocalPath)
+
+    if (!converImage.url) {
+        throw new ApiError(500, "Error uploading to cloudinary")
+    }
+
+    const user = await findByIdAndUpdate(req.user?._id, {
+        $set: {
+            converImage: converImage.url
+        }
+    }, { new: true }).select("-password -refreshToken")
+
+    return res
+        .status(200)
+        .json(200, user, "converImage changed successfully")
+})
+
+
+
+export {
+    registerUser,
+    loginUser,
+    loggedOutUser,
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetais,
+    updateAvatar,
+    updateCoverImage
+}
