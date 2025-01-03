@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
+import mongoose from "mongoose"
 
 const generateAccessAndRefreshToken = async (userId) => {
     try {
@@ -429,6 +430,64 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 })
 
 
+const getWatchHistory = asyncHandler(async (req, res) => {
+    const user = await User.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.user?._id)
+                /*
+                
+                MongoDB _id vs. Mongoose-generated _id: MongoDB generates an _id of type ObjectId by default. Mongoose uses the same ObjectId type for _id unless explicitly overridden.
+
+                Aggregation Pipelines: When using aggregation pipelines directly in MongoDB or via Mongoose, the pipeline operates on the raw database documents. If your pipeline involves filtering, grouping, or matching using _id, it must be of type ObjectId. If the _id you're dealing with is a string (e.g., passed from the client), you'll need to convert it explicitly to ObjectId using Mongoose or the native MongoDB driver.
+
+                Implicit Conversion by Mongoose: For operations like find or findById, Mongoose implicitly converts string _id values to ObjectId behind the scenes, simplifying the process. However, aggregation pipelines do not leverage Mongoose's implicit conversion because they are closer to raw MongoDB operations.
+
+                In summary, when working with aggregation pipelines, ensure you explicitly convert string _id values to ObjectId if they are passed in as strings. For other Mongoose-based operations, this conversion is typically handled for you.
+                
+                */
+            }
+        },
+        {
+            $lookup: {
+                from: "videos", // lowercase and plural
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1
+                                    }
+                                },
+                                {
+                                    $addFields: {
+                                        owner: {
+                                            $first: "$owner"
+                                        }
+                                    }
+                                }
+
+                            ]
+                        }
+                    }
+                ]  
+            }
+        }
+    ])
+
+    return res.status(200).json(new ApiResponse(200 , user[0].watchHistory , "Watch history fetched successfully"))
+})
+
 export {
     registerUser,
     loginUser,
@@ -439,5 +498,6 @@ export {
     updateAccountDetais,
     updateAvatar,
     updateCoverImage,
-    getUserChannelProfile
+    getUserChannelProfile,
+    getWatchHistory
 }
