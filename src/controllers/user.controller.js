@@ -121,7 +121,6 @@ const loginUser = asyncHandler(async (req, res) => {
     // send cookie
     // send response
 
-    console.log(req.body);
     // getting data from the body
     const { username, email, password } = req.body
 
@@ -256,7 +255,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     const { currentPassword, newPassword } = req.body
     // TODO: perform validation
 
-    const user = await findById(req.user._id)
+    const user = await User.findById(req.user._id)
     // compare password
 
     const isPasswordCorrect = await user.isPasswordCorrect(currentPassword)
@@ -321,7 +320,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Error uploading to cloudinary")
     }
 
-    const user = await findByIdAndUpdate(req.user?._id, {
+    const user = await User.findByIdAndUpdate(req.user?._id, {
         $set: {
             avatar: avatar.url
         }
@@ -350,7 +349,7 @@ const updateCoverImage = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Error uploading to cloudinary")
     }
 
-    const user = await findByIdAndUpdate(req.user?._id, {
+    const user = await User.findByIdAndUpdate(req.user?._id, {
         $set: {
             converImage: converImage.url
         }
@@ -424,7 +423,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     if (!channel?.length) {
         throw new ApiError(404, "channel does not exist")
     }
-
+    
     return res.status(200).json(new ApiResponse(200, channel[0], "user channel fetched successfully"))
 
 

@@ -34,7 +34,7 @@ router.route("/update-account").patch(verifyJWT, updateAccountDetais)
 router.route("/avatar").patch(verifyJWT, upload.single("avatar"), updateAvatar)
 router.route("/cover-image").patch(verifyJWT, upload.single("coverImage"), updateCoverImage)
 
-router.route("/c/:username").get(verifyJWT, getUserChannelProfile) // getting data from url
+router.route("/c/:username").get(verifyJWT, getUserChannelProfile) // getting data from url TODO: test using param
 
 router.route("/history").get(verifyJWT, getWatchHistory)
 
