@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/AsyncHandler.js"
 import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/user.model.js"
-import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { uploadOnCloudinary, removeFromCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose"
@@ -302,20 +302,13 @@ const updateAccountDetais = asyncHandler(async (req, res) => {
 })
 
 const updateAvatar = asyncHandler(async (req, res) => {
-    /*
-    get data from the body
-    validate data
-    validate the user
-    update the avatar
-    remove the avatar from cloudinary TODO:
-    */
     const avatarLocalPath = req.file?.path
     if (!avatarLocalPath) {
         throw new ApiError(400, "avatar file is missing")
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
-
+    // console.log(avatar.url);
     if (!avatar.url) {
         throw new ApiError(500, "Error uploading to cloudinary")
     }
@@ -324,9 +317,15 @@ const updateAvatar = asyncHandler(async (req, res) => {
         $set: {
             avatar: avatar.url
         }
-    }, { new: true }).select("-password -refreshToken")
+    }, { new: false }).select("-password -refreshToken")
+    // console.log(user);
 
-    return res.status(200).json(200, user, "avatar changed successfully")
+    const removeAvatar = await  removeFromCloudinary(user.avatar)
+    // console.log("remove avatar response : ", removeAvatar);
+
+    const updatedUser = await User.findById(req.user?._id)
+
+    return res.status(200).json(200, updatedUser, "avatar changed successfully")
 })
 
 
@@ -423,7 +422,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     if (!channel?.length) {
         throw new ApiError(404, "channel does not exist")
     }
-    
+
     return res.status(200).json(new ApiResponse(200, channel[0], "user channel fetched successfully"))
 
 
@@ -480,12 +479,12 @@ const getWatchHistory = asyncHandler(async (req, res) => {
                             ]
                         }
                     }
-                ]  
+                ]
             }
         }
     ])
 
-    return res.status(200).json(new ApiResponse(200 , user[0].watchHistory , "Watch history fetched successfully"))
+    return res.status(200).json(new ApiResponse(200, user[0].watchHistory, "Watch history fetched successfully"))
 })
 
 export {
